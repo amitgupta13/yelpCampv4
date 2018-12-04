@@ -3,7 +3,8 @@ const express = require('express'),
       app = express(),
       mongoose = require('mongoose'),
       Campground = require('./models/campground'),
-      seedDB = require('./seeds');
+      seedDB = require('./seeds'),
+      Comment = require('./models/comment');
 
 mongoose.connect('mongodb://localhost/yelpCamp',{useNewUrlParser:true})
 .then(()=>{
@@ -26,7 +27,7 @@ app.get('/campgrounds', function(req, res){
 
     Campground.find({},function(err, campgrounds){
         if(err) return console.log(err);
-        res.render('index', {campgrounds:campgrounds});
+        res.render('campgrounds/index', {campgrounds:campgrounds});
     });
 });
 
@@ -47,13 +48,43 @@ app.post('/campgrounds', function(req, res){
 });
 
 app.get('/campgrounds/new', function(req, res){
-    res.render('new');
+    res.render('campgrounds/new');
 });
 
+//Show - show more info about one campground
 app.get('/campgrounds/:id', function(req, res){
     Campground.findById(req.params.id).populate('comments').exec(function(err, campground){
         if(err) return console.log(err);
-            res.render('show', {campground:campground});
+            res.render('campgrounds/show', {campground:campground});
+    });
+});
+
+//================
+//Comments routes
+//================
+
+app.get('/campgrounds/:id/comments/new', function(req, res){
+    Campground.findById(req.params.id, (err, campground)=>{
+        if(err) return console.log(err);
+            res.render('comments/new', {campground:campground});
+    });
+});
+
+app.post('/campgrounds/:id/comments', function(req, res){
+    Campground.findById(req.params.id, (err, campground)=>{
+        if(err){
+            console.log(err);
+            return res.redirect('/campgrounds');
+        }else{
+            Comment.create(req.body.comment, function(err, comment){
+                if(err) console.log(err);
+                    campground.comments.push(comment);
+                    campground.save();
+                    res.redirect(`/campgrounds/${campground._id}`);
+            });
+        }  
+                
+
     });
 });
 
